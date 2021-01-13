@@ -1,0 +1,58 @@
+AE2
+ - O certus
+ - O charged certus
+DE
+ - O draconium
+charm
+ - O moonstone
+ - O nether gold deposits
+chisel
+ - X limestone
+ - X marble
+ - O basalt
+extreme reactors
+ - O anglesite
+ - O benitoite
+ - O yellorite
+IC2
+ - O rubber tree
+ - X copper
+ - X lead
+ - X uranium
+immersive engineering
+ - X bauxite (aluminium)
+ - X copper
+ - X lead
+ - X nickel
+ - X silver
+ - X uranium
+mekanism
+ - X copper
+ - O osmium
+ - O salt
+ - X tin
+quark
+ - O basalt (nether)
+ - O biotite
+ - O granite
+ - O diorite
+ - O andesite
+ - O marble
+ - O limestone
+ - O jasper
+ - O slate
+ - O sandstone
+ - O slime
+ - O prismarine
+thermal foundation
+ - O copper
+ - O tin
+ - O silver
+ - O lead
+ - O nickel
+ - X platinum
+ - O aluminum
+ - X iridium
+tinker's construct
+ - O cobalt
+ - O ardite
