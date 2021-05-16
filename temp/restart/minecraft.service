@@ -1,0 +1,21 @@
+[Unit]
+Description=Minecraft Server
+After=network.target
+StartLimitInterval=180
+StartLimitBurst=2
+
+[Service]
+WorkingDirectory=/home/minecraft/server
+User=minecraft
+Group=minecraft
+ExecStart=/bin/sh -c '/usr/bin/screen -DmS minecraft /usr/bin/java -server -Xms2000M -Xmx7500M -XX:+UseConcMarkSweepGC -XX:+UseParNewGC -XX:+CMSIncrementalPacing -XX:ParallelGCThreads=7 -XX:+AggressiveOpts -jar forge-1.12.2-14.23.5.2854.jar nogui'
+ExecReload=/usr/bin/screen -p 0 -S minecraft -X eval 'stuff "reload"\\015'
+ExecStop=/usr/bin/screen -p 0 -S minecraft -X eval 'stuff "say  !!! SERVER SHUTTING DOWN !!!"\\015'
+ExecStop=/usr/bin/screen -p 0 -S minecraft -X eval 'stuff "stop"\\015'
+ExecStop=/bin/sleep 15
+
+Restart=on-failure
+RestartSec=60
+
+[Install]
+WantedBy=multi-user.target

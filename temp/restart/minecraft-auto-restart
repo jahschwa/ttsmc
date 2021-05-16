@@ -1,0 +1,26 @@
+#!/usr/bin/env python3
+
+import os
+import time
+
+RESTART_FILE = '/home/minecraft/server/restart.flag'
+LOG_FILE = '/home/minecraft/server/restart.log'
+
+def main():
+
+  if not os.path.isfile(RESTART_FILE):
+    return
+
+  from mcstatus import MinecraftServer
+  players = MinecraftServer.lookup('localhost').status().players
+  if players.online > 0:
+    return
+
+  with open(LOG_FILE, 'a') as f:
+    f.write('{} | Restarting\n'.format(time.asctime()))
+  os.remove(RESTART_FILE)
+  from subprocess import run
+  run(['/usr/bin/systemctl', 'restart', 'minecraft'])
+
+if __name__ == '__main__':
+  main()

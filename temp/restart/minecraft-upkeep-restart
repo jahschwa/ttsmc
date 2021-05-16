@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+mc=/usr/local/bin/minecraft
+
+$mc say '[NOTICE] Queueing weekly upkeep restart'
+$mc restart

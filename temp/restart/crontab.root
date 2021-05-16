@@ -1,0 +1,2 @@
+* * * * * /root/cron/minecraft-auto-restart
+0 3 * * 1 /root/cron/minecraft-upkeep-restart

@@ -1,0 +1,134 @@
+#!/usr/bin/env bash
+
+warn_file='~/.warn_console'
+warn_file="${warn_file/#\~/$HOME}"
+
+restart_file="/home/minecraft/server/restart.flag"
+restart_log="/home/minecraft/server/restart.log"
+
+log_dir='/home/minecraft/server/logs'
+current_log="$log_dir/latest.log"
+previous_log=$(ls -t "$log_dir"/*.log.gz | grep -v debug | head -n 1)
+
+cmd="$1"
+if [ ! "$cmd" ]; then
+  cmd="help"
+fi
+
+case "$cmd" in
+  help|h|--help|-h)
+    echo 'usage: minecraft (console|players|run|say|chat|lag|profile|status|restart|stop|start|journal|update)'
+    echo '    console : open console screen session (exit: Ctrl+a, d)'
+    echo '    players : list online players'
+    echo '    run     : execute a minecraft command'
+    echo '    say     : send a chat message'
+    echo '    chat    : show chat log'
+    echo "    lag     : show Can't Keep Up log lines"
+    echo '    profile : run TickProfiler'
+    echo '    status  : show service status'
+    echo '    restart : queue a restart'
+    echo '              subcmds: now, cancel, help'
+    echo '    stop    : stop server and disable auto-restart'
+    echo '              (restart & start re-enable auto-restart)'
+    echo '    start   : start server'
+    echo '    journal : show service log (shows restarts and crashes)'
+    echo '    update  : pull changes from github'
+  ;;
+  console)
+    if [ ! -f "$warn_file" ]; then
+      echo ""
+      echo "This will attach you to a screen session. Docs:"
+      echo "    https://www.linode.com/docs/guides/using-gnu-screen-to-manage-persistent-terminal-sessions/#manipulating-screen-sessions"
+      echo ""
+      echo "To exit type 'Ctrl+a' then 'd'"
+      echo ""
+      echo "To suppress this warning run: 'touch $warn_file'"
+      echo ""
+      read -p "Press Enter to continue or 'Ctrl+c' to quit... "
+    fi
+    sudo -u minecraft screen -rx
+    echo ""
+  ;;
+  players)
+    $0 run list
+    sleep 1
+    egrep -A10 'There are [0-9]+/20 players online:' "$current_log" \
+      | grep '\[Server thread/INFO\] \[net.minecraft.server.dedicated.DedicatedServer\]:' \
+      | tail -n 2 \
+      | sed -E 's/^\[([0-9:]+)\].*\]: (.*)$/\1 | \2/'
+  ;;
+  run)
+    shift
+    msg=$(echo "$*" | sed 's/"//g' | sed "s/'//g")
+    sudo -u minecraft /usr/bin/screen -p 0 -S minecraft -X eval 'stuff "'"$msg"'"\\015'
+  ;;
+  say)
+    $0 run "$*"
+  ;;
+  chat)
+    zcat "$previous_log" | cat - "$current_log" | egrep '<[0-9A-Za-z_]+>' | sed -E 's/^\[([0-9:]+)\][^<]+<([^>]*)> (.*)$/\1 | \2: \3/' | less +G
+  ;;
+  lag)
+    zcat "$previous_log" | cat - "$current_log" | egrep "Can't keep up!|joined the game|left the game" | sed -E 's/^\[([0-9:]+)\][^:]*: (.*)$/\1 | \2/' | less +G
+  ;;
+  profile)
+    $0 players
+    echo '-----'
+    sudo -u minecraft /usr/local/bin/profile
+  ;;
+  status)
+    sudo systemctl status minecraft
+    echo ""
+    echo " ----- "
+    echo ""
+    sudo journalctl -u minecraft -n 10
+  ;;
+  restart)
+    if [[ "$2" = 'help' ]]; then
+      echo ''
+      echo 'minecraft restart [cancel|now]'
+      echo ''
+    elif [[ "$2" = 'cancel' ]]; then
+      if [[ -f "$restart_file" ]]; then
+        echo 'Restart canceled' | sudo tee -a "$restart_log"
+        sudo rm "$restart_file"
+        $0 say '[NOTICE] canceled: RestartOnEmpty'
+        echo 'Restart canceled'
+      else
+        echo 'No pending restart; nothing to do'
+      fi
+    elif [[ "$2" = 'now' ]]; then
+      echo "Restart now" | sudo tee -a "$restart_log"
+      sudo systemctl restart minecraft
+    else
+      echo ''
+      if [[ -f "restart_file" ]]; then
+        echo 'There is already a restart pending.'
+      else
+        echo 'Restart on empty' | sudo tee -a "$restart_log"
+        $0 say '[NOTICE] queued: RestartOnEmpty'
+        sudo touch "$restart_file"
+      fi
+      echo 'Minecraft will auto-restart as soon as no one is logged in.'
+      echo ''
+      echo 'To cancel the pending restart run:'
+      echo '    minecraft restart cancel'
+      echo ''
+      echo 'If you meant to restart immediately run:'
+      echo '    minecraft restart now'
+      echo ''
+    fi
+  ;;
+  stop)
+    sudo systemctl stop minecraft
+  ;;
+  start)
+    sudo systemctl start minecraft
+  ;;
+  journal)
+    sudo -n /usr/bin/journalctl -u minecraft
+  ;;
+  update)
+    sudo -u minecraft /bin/bash -c 'cd ~/git/ttsmc; git pull; bin/update'
+  ;;
+esac
