@@ -127,3 +127,8 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Secret
+config/Chikachi/discordintegration.json
+secrets/password.txt
+secrets/secrets.json
